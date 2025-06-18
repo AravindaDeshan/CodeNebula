@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeNebula | Online Compiler</title>
+    <style>
+        :root {
+            --primary: #6c5ce7;
+            --secondary: #a29bfe;
+            --dark: #2d3436;
+            --light: #f5f6fa;
+            --success: #00b894;
+            --danger: #d63031;
+            --warning: #fdcb6e;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Fira Code', monospace, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: var(--light);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo i {
+            font-size: 2rem;
+            color: var(--primary);
+        }
+
+        .logo h1 {
+            font-size: 1.8rem;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-weight: 700;
+        }
+
+        .theme-toggle {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: var(--light);
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .compiler-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            height: 70vh;
+        }
+
+        @media (max-width: 768px) {
+            .compiler-container {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+        }
+
+        .code-editor {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .editor-header {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 10px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .language-selector {
+            background: dimgray;
+            border: none;
+            color: var(--light);
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .editor-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .editor-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: var(--light);
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .editor-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .editor-btn.run {
+            background: var(--success);
+            color: white;
+        }
+
+        .editor-btn.run:hover {
+            background: #00a884;
+        }
+
+        .editor-btn.clear {
+            background: var(--danger);
+            color: white;
+        }
+
+        .editor-btn.clear:hover {
+            background: #c0392b;
+        }
+
+        textarea.code-input {
+            flex-grow: 1;
+            background: #1e1e1e;
+            border: none;
+            color: #d4d4d4;
+            padding: 15px;
+            resize: none;
+            font-size: 14px;
+            line-height: 1.5;
+            tab-size: 4;
+        }
+
+        textarea.code-input:focus {
+            outline: none;
+        }
+
+        .output-container {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            min-height: 300px;
+        }
+
+        .output-header {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 10px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .output-tabs {
+            display: flex;
+            gap: 10px;
+        }
+
+        .output-tab {
+            background: transparent;
+            border: none;
+            color: var(--light);
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: all 0.3s ease;
+        }
+
+        .output-tab.active {
+            opacity: 1;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .output-content {
+            flex-grow: 1;
+            padding: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .output-result {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: auto;
+        }
+
+        #output-frame {
+            width: 100%;
+            height: 100%;
+            min-height: 300px;
+            border: none;
+            background: white;
+        }
+
+        #output-text, #output-error {
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            padding: 15px;
+            flex-grow: 1;
+        }
+
+        #output-text {
+            color: var(--light);
+        }
+
+        #output-error {
+            color: var(--danger);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px 0;
+            margin-top: 30px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .compiler-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .code-editor, .output-container {
+                height: 300px;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-code"></i>
+                <h1>CodeNebula</h1>
+            </div>
+            <button class="theme-toggle" id="themeToggle">
+                <i class="fas fa-moon"></i>
+                <span>Dark Mode</span>
+            </button>
+        </header>
+
+        <main>
+            <div class="compiler-container">
+                <div class="code-editor">
+                    <div class="editor-header">
+                        <select class="language-selector" id="languageSelector">
+                            <option value="html">HTML</option>
+                            <option value="c">C</option>
+                            <option value="cpp">C++</option>
+                        </select>
+                        <div class="editor-actions">
+                            <button class="editor-btn clear" id="clearBtn">
+                                <i class="fas fa-trash"></i>
+                                <span>Clear</span>
+                            </button>
+                            <button class="editor-btn run" id="runBtn">
+                                <i class="fas fa-play"></i>
+                                <span>Run</span>
+                            </button>
+                        </div>
+                    </div>
+                    <textarea class="code-input" id="codeInput" spellcheck="false" placeholder="Enter your code here..."></textarea>
+                </div>
+
+                <div class="output-container">
+                    <div class="output-header">
+                        <div class="output-tabs">
+                            <button class="output-tab active" data-tab="output">Output</button>
+                            <button class="output-tab" data-tab="error">Errors</button>
+                        </div>
+                    </div>
+                    <div class="output-content">
+                        <div class="output-result" id="output-tab-content">
+                            <iframe id="output-frame" class="hidden"></iframe>
+                            <pre id="output-text">Your output will appear here...</pre>
+                            <pre id="output-error" class="hidden"></pre>
+                        </div>
+                        <div id="loading" class="loading hidden">
+                            <div class="spinner"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>© 2025 ADS Group | Online Code Compiler | All Right Receved.</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
+            const codeInput = document.getElementById('codeInput');
+            const languageSelector = document.getElementById('languageSelector');
+            const runBtn = document.getElementById('runBtn');
+            const clearBtn = document.getElementById('clearBtn');
+            const outputFrame = document.getElementById('output-frame');
+            const outputText = document.getElementById('output-text');
+            const outputError = document.getElementById('output-error');
+            const outputTabs = document.querySelectorAll('.output-tab');
+            const loadingIndicator = document.getElementById('loading');
+            const themeToggle = document.getElementById('themeToggle');
+            const outputResult = document.getElementById('output-tab-content');
+
+            // Default code examples
+            const defaultCode = {
+                html: `<!DOCTYPE html>
+<html>
+<head>
+    <title>My Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+        }
+        h1 {
+            color: #6c5ce7;
+        }
+    </style>
+</head>
+<body>
+    <h1>Hello, World!</h1>
+    <p>Welcome to my HTML page.</p>
+    <button onclick="alert('Button clicked!')">Click Me</button>
+</body>
+</html>`,
+                c: `#include <stdio.h>
+
+int main() {
+    printf("Hello, World!\\n");
+    
+    int number;
+    printf("Enter a number: ");
+    scanf("%d", &number);
+    printf("You entered: %d\\n", number);
+    
+    return 0;
+}`,
+                cpp: `#include <iostream>
+using namespace std;
+
+int main() {
+    cout << "Hello, World!" << endl;
+    
+    int number;
+    cout << "Enter a number: ";
+    cin >> number;
+    cout << "You entered: " << number << endl;
+    
+    return 0;
+}`
+            };
+
+            // Set default code based on selected language
+            function setDefaultCode() {
+                const language = languageSelector.value;
+                codeInput.value = defaultCode[language];
+            }
+
+            // Initialize with HTML default code
+            setDefaultCode();
+
+            // Language selector change event
+            languageSelector.addEventListener('change', function() {
+                setDefaultCode();
+                // Clear output when language changes
+                clearOutput();
+            });
+
+            // Tab switching
+            outputTabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // Update active tab
+                    outputTabs.forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    const tabName = this.getAttribute('data-tab');
+                    
+                    // Show appropriate content
+                    if (tabName === 'output') {
+                        if (languageSelector.value === 'html') {
+                            outputFrame.classList.remove('hidden');
+                            outputText.classList.add('hidden');
+                        } else {
+                            outputFrame.classList.add('hidden');
+                            outputText.classList.remove('hidden');
+                        }
+                        outputError.classList.add('hidden');
+                    } else if (tabName === 'error') {
+                        outputFrame.classList.add('hidden');
+                        outputText.classList.add('hidden');
+                        outputError.classList.remove('hidden');
+                    }
+                });
+            });
+
+            // Clear button
+            clearBtn.addEventListener('click', function() {
+                codeInput.value = '';
+                clearOutput();
+            });
+
+            // Clear output
+            function clearOutput() {
+                outputText.textContent = 'Your output will appear here...';
+                outputError.textContent = '';
+                outputFrame.srcdoc = '';
+                outputError.classList.add('hidden');
+                
+                if (languageSelector.value === 'html') {
+                    outputFrame.classList.remove('hidden');
+                    outputText.classList.add('hidden');
+                } else {
+                    outputFrame.classList.add('hidden');
+                    outputText.classList.remove('hidden');
+                }
+                
+                // Reset tabs
+                outputTabs.forEach(tab => {
+                    if (tab.getAttribute('data-tab') === 'output') {
+                        tab.classList.add('active');
+                    } else {
+                        tab.classList.remove('active');
+                    }
+                });
+            }
+
+            // Run button
+            runBtn.addEventListener('click', function() {
+                const code = codeInput.value.trim();
+                const language = languageSelector.value;
+                
+                if (!code) {
+                    outputError.textContent = 'Error: Please enter some code to run.';
+                    outputError.classList.remove('hidden');
+                    outputText.classList.add('hidden');
+                    outputFrame.classList.add('hidden');
+                    
+                    // Switch to error tab
+                    outputTabs.forEach(tab => {
+                        if (tab.getAttribute('data-tab') === 'error') {
+                            tab.classList.add('active');
+                        } else {
+                            tab.classList.remove('active');
+                        }
+                    });
+                    return;
+                }
+                
+                // Show loading indicator
+                loadingIndicator.classList.remove('hidden');
+                outputText.classList.add('hidden');
+                outputFrame.classList.add('hidden');
+                outputError.classList.add('hidden');
+                
+                // Simulate processing delay
+                setTimeout(() => {
+                    try {
+                        if (language === 'html') {
+                            // For HTML, render directly in iframe
+                            outputFrame.srcdoc = code;
+                            outputFrame.classList.remove('hidden');
+                            outputText.classList.add('hidden');
+                            outputError.classList.add('hidden');
+                            outputText.textContent = 'HTML rendered successfully.';
+                            
+                            // Ensure iframe fills available space
+                            outputFrame.style.height = outputResult.offsetHeight + 'px';
+                        } else if (language === 'c' || language === 'cpp') {
+                            // For C/C++, we would normally send to a server for compilation
+                            // Here we'll simulate a simple output
+                            outputFrame.classList.add('hidden');
+                            outputText.classList.remove('hidden');
+                            outputError.classList.add('hidden');
+                            
+                            // Simulate compilation
+                            if (code.includes('error')) {
+                                throw new Error('Simulated compilation error: Syntax error on line 5');
+                            }
+                            
+                            // Simulate program output
+                            if (code.includes('scanf') || code.includes('cin')) {
+                                outputText.textContent = "Hello, World!\nEnter a number: 42\nYou entered: 42";
+                            } else {
+                                outputText.textContent = "Hello, World!";
+                            }
+                        }
+                    } catch (error) {
+                        outputError.textContent = error.message;
+                        outputError.classList.remove('hidden');
+                        outputText.classList.add('hidden');
+                        outputFrame.classList.add('hidden');
+                        
+                        // Switch to error tab
+                        outputTabs.forEach(tab => {
+                            if (tab.getAttribute('data-tab') === 'error') {
+                                tab.classList.add('active');
+                            } else {
+                                tab.classList.remove('active');
+                            }
+                        });
+                    } finally {
+                        loadingIndicator.classList.add('hidden');
+                    }
+                }, 1000);
+            });
+
+            // Theme toggle
+            themeToggle.addEventListener('click', function() {
+                document.body.classList.toggle('light-theme');
+                const isDark = !document.body.classList.contains('light-theme');
+                
+                if (isDark) {
+                    themeToggle.innerHTML = '<i class="fas fa-moon"></i><span>Dark Mode</span>';
+                    document.body.style.background = 'linear-gradient(135deg, #1a1a2e, #16213e)';
+                } else {
+                    themeToggle.innerHTML = '<i class="fas fa-sun"></i><span>Light Mode</span>';
+                    document.body.style.background = '#f5f6fa';
+                }
+            });
+
+            // Resize iframe when window changes
+            window.addEventListener('resize', function() {
+                if (languageSelector.value === 'html' && !outputFrame.classList.contains('hidden')) {
+                    outputFrame.style.height = outputResult.offsetHeight + 'px';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
